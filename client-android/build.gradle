@@ -1,0 +1,95 @@
+apply plugin: 'com.android.application'
+android.defaultConfig.javaCompileOptions.annotationProcessorOptions.includeCompileClasspath = true
+android {
+    lintOptions {
+        abortOnError false
+    }
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/ASL2.0'
+        exclude("META-INF/*.kotlin_module")
+    }
+    compileSdkVersion 28
+    buildToolsVersion "29.0.2"
+    defaultConfig {
+        applicationId "com.dukescript.demo.gradle.android.app"
+        minSdkVersion 23
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    sourceSets {
+        main {
+            resources {
+                srcDir 'build/webpages'
+            }
+            resources {
+                srcDir 'build/res'
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'com.android.support:design:28.0.0'
+    implementation 'org.netbeans.html:ko4j:1.6.1'
+    implementation 'org.netbeans.html:net.java.html.boot:1.6.1'
+    implementation 'org.netbeans.html:net.java.html.sound:1.6.1'
+
+    compile ('org.netbeans.html:ko-ws-tyrus:1.6.1'){
+        exclude group: 'org.json-osgi', module: 'de.twentyeleven.skysail'
+    }
+    compile ('com.dukescript.presenters:android:1.7'){
+        exclude group: 'org.netbeans.html', module: 'net.java.html.boot'
+        exclude group: 'org.netbeans.html', module: 'net.java.html.json'
+        exclude group: 'org.netbeans.html', module: 'net.java.html.sound'
+        exclude group: 'android.support', module: 'compatibility-v4'
+    }
+    compile ('com.dukescript.demo:gradle-android:1.0-SNAPSHOT'){
+        exclude group: 'org.netbeans.html', module: 'net.java.html.json'
+        exclude group: 'org.netbeans.html', module: 'net.java.html.boot'
+        exclude group: 'org.netbeans.html', module: 'net.java.html.boot.fx'
+        exclude group: 'org.netbeans.html', module: 'net.java.html.sound'
+    }
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}
+
+configurations { assets }
+
+dependencies {
+    assets group: 'com.dukescript.demo', name: 'gradle-android', version: '1.0-SNAPSHOT', classifier: 'webpages', ext: 'zip'
+}
+
+task cleanAssets(type: Delete) { delete 'assets' }
+tasks.clean.dependsOn cleanAssets
+
+
+task importAssets(type: Copy) {
+    dependsOn cleanAssets
+    from {
+        configurations.assets.collect { zipTree(it) }
+    }
+    into 'build/webpages/assets/pages'
+}
+
+project.afterEvaluate {
+    generateDebugResources.dependsOn tasks['importAssets']
+}
